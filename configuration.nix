@@ -5,16 +5,17 @@
 { config, pkgs, ... }:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./gpu-bypass.nix
-      # ./looking-glass.nix
-    ];
+  imports = [ # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ./dev.nix
+    ./vm.nix
+    ./gpu.nix
+  ];
 
   # Bootloader.
   boot = {
     kernelPackages = pkgs.linuxKernel.packages.linux_6_10;
+    supportedFilesystems = [ "ntfs" ];
     loader = {
       grub = {
         enable = true;
@@ -61,9 +62,9 @@
   services.desktopManager.plasma6.enable = true;
 
   # Configure keymap in X11
-  services.xserver = {
+  services.xserver.xkb = {
     layout = "us";
-    xkbVariant = "";
+    variant = "";
   };
 
   # Enable CUPS to print documents.
@@ -93,17 +94,18 @@
     isNormalUser = true;
     description = "red";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      kdePackages.kate
-    #  thunderbird
-    ];
+    packages = with pkgs;
+      [
+        kdePackages.kate
+        #  thunderbird
+      ];
   };
 
   # Enable trezor
   services.trezord.enable = true;
 
   virtualisation.docker.enable = true;
-  
+
   programs = {
     # Install Steam
     steam.enable = true;
@@ -114,17 +116,9 @@
     firefox.enable = true;
   };
 
-  programs.nix-ld.enable = true;
-  programs.nix-ld.libraries = with pkgs; [
-
-    # Add any missing dynamic libraries for unpackaged programs
-
-    # here, NOT in environment.systemPackages
-
-  ];
-
   hardware.bluetooth.enable = true; # enables support for Bluetooth
-  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
+  hardware.bluetooth.powerOnBoot =
+    true; # powers up the default Bluetooth controller on boot
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
@@ -132,99 +126,23 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vscode
     pciutils
     usbutils
+    flameshot
+    rar
+    p7zip
     mangohud
-
-    jetbrains.idea-ultimate
-    discord
-    looking-glass-client
     ollama
-    git
-    gh
     dmidecode
     remmina
-    docker
-    jdk11
-    maven
-    ghidra
-    spice-vdagent
-
     gimp-with-plugins
-
-    rar
-
+    gdu
+    discord
     vlc
-
-    nodejs
+    lutris
   ];
-
-  systemd.tmpfiles.rules = [
-    "f /dev/shm/looking-glass 0660 red qemu-libvertd -"
-  ];
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  hardware.opengl = {
-    enable = true;
-    driSupport = true;
-    driSupport32Bit = true;
-  };
-
-  # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia"];
 
   services.ollama.enable = true;
-
-  hardware.nvidia = {
-
-    # Modesetting is required.
-    modesetting.enable = true;
-
-    # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
-    # Enable this if you have graphical corruption issues or application crashes after waking
-    # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead 
-    # of just the bare essentials.
-    powerManagement.enable = true;
-
-    # Fine-grained power management. Turns off GPU when not in use.
-    # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = false;
-
-    # Use the NVidia open source kernel module (not to be confused with the
-    # independent third-party "nouveau" open source driver).
-    # Support is limited to the Turing and later architectures. Full list of 
-    # supported GPUs is at: 
-    # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus 
-    # Only available from driver 515.43.04+
-    # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = false;
-
-    # Enable the Nvidia settings menu,
-	# accessible via `nvidia-settings`.
-    nvidiaSettings = true;
-
-    # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-  };
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
